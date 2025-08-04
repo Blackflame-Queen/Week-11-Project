@@ -174,7 +174,6 @@ public class ProjectDao extends DaoBase {
           boolean deleted = stmt.executeUpdate() > 0;
           commitTransaction(conn);
 
-          // Check if table is empty and reset AUTO_INCREMENT if necessary
           String countSql = "SELECT COUNT(*) FROM " + PROJECT_TABLE;
           try (PreparedStatement countStmt = conn.prepareStatement(countSql);
                ResultSet rs = countStmt.executeQuery()) {
