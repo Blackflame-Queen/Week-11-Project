@@ -34,7 +34,7 @@ public class ProjectService {
    */
   public Project fetchProjectById(Integer projectId) {
     return projectDao.fetchProjectById(projectId).orElseThrow(() -> new NoSuchElementException(
-        "Project with project ID=" + projectId + " does not exist"));
+        "Project with ID= " + projectId + " does not exist."));
   }
 
   /**
@@ -45,7 +45,7 @@ public class ProjectService {
    */
   public boolean updateProject(Project project) {
     if (fetchProjectById(project.getProjectId()) == null) {
-      throw new NoSuchElementException("Project with ID=" + project.getProjectId() + " does not exist");
+      throw new NoSuchElementException("Project with ID=" + project.getProjectId() + " does not exist.");
     }
     return projectDao.updateProject(project);
   }
@@ -58,7 +58,7 @@ public class ProjectService {
    */
   public boolean deleteProject(Integer projectId) {
     if (fetchProjectById(projectId) == null) {
-      throw new NoSuchElementException("Project with ID=" + projectId + " does not exist");
+      throw new NoSuchElementException("Project with ID=" + projectId + " does not exist.");
     }
     return projectDao.deleteProject(projectId);
   }

@@ -3,6 +3,7 @@ package projects;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Scanner;
 import projects.entity.Project;
 import projects.exception.DbException;
@@ -74,33 +75,30 @@ public class ProjectsApp {
       System.out.println("Choose a project first"); 
       return;
     }
-    // Prompt for updates
-    String projectName = getStringInput("Enter project name (" + curProject.getProjectName() + ")"); 
-    BigDecimal estimatedHours = getDecimalInput("Enter estimated hours (" + curProject.getEstimatedHours() + ")"); 
-    BigDecimal actualHours = getDecimalInput("Enter actual hours (" + curProject.getActualHours() + ")"); 
-    Integer difficultyInput = getIntInput("Enter difficulty (1-5) (" + curProject.getDifficulty() + ")"); 
-Integer difficulty = null;
-if (difficultyInput != null) {
-  if (difficultyInput < 1 || difficultyInput > 5) {
-    System.out.println("Difficulty must be between 1 and 5. Keeping original value.");
-  } else {
-    difficulty = difficultyInput;
-  }
-} else {
-  difficulty = curProject.getDifficulty();
-} 
-    String notes = getStringInput("Enter note (" + curProject.getNotes() + ")"); 
+    // I use optionals here for string inputs, following the advice of my instructor Ted Stanley
 
-    // Set new values if provided
-    curProject.setProjectName(Objects.isNull(projectName) ? curProject.getProjectName() : projectName);
-    curProject.setEstimatedHours(Objects.isNull(estimatedHours) ? curProject.getEstimatedHours() : estimatedHours);
-    curProject.setActualHours(Objects.isNull(actualHours) ? curProject.getActualHours() : actualHours);
-    curProject.setDifficulty(Objects.isNull(difficulty) ? curProject.getDifficulty() : difficulty);
-    curProject.setNotes(Objects.isNull(notes) ? curProject.getNotes() : notes);
+    Optional<String> projectNameOpt = Optional.ofNullable(getStringInput("Enter project name (" + curProject.getProjectName() + ")").orElse(null));
+    Optional<BigDecimal> estimatedHoursOpt = Optional.ofNullable(getDecimalInput("Enter estimated hours (" + curProject.getEstimatedHours() + ")"));
+    Optional<BigDecimal> actualHoursOpt = Optional.ofNullable(getDecimalInput("Enter actual hours (" + curProject.getActualHours() + ")"));
+    Optional<Integer> difficultyInputOpt = Optional.ofNullable(getIntInput("Enter difficulty (1-5) (" + curProject.getDifficulty() + ")"));
+    Optional<String> notesOpt = Optional.ofNullable(getStringInput("Enter note (" + curProject.getNotes() + ")").orElse(null));
 
+    // Set new values for project update, if provided
+
+    curProject.setProjectName(projectNameOpt.orElse(curProject.getProjectName()));
+    curProject.setEstimatedHours(estimatedHoursOpt.orElse(curProject.getEstimatedHours()));
+    curProject.setActualHours(actualHoursOpt.orElse(curProject.getActualHours()));
+    Integer difficulty = difficultyInputOpt.filter(d -> d >= 1 && d <= 5).orElseGet(() -> {
+      if (difficultyInputOpt.isPresent()) {
+        System.out.println("Difficulty must be between 1 and 5. Keeping original value.");
+      }
+      return curProject.getDifficulty();
+    });
+    curProject.setDifficulty(difficulty);
+    curProject.setNotes(notesOpt.orElse(curProject.getNotes()));
     projectService.updateProject(curProject);
-    curProject = projectService.fetchProjectById(curProject.getProjectId()); 
-    System.out.println("Project updated successfully"); 
+    curProject = projectService.fetchProjectById(curProject.getProjectId());
+    System.out.println("Project updated successfully");
   }
 
   // Delete current project
@@ -134,39 +132,45 @@ if (difficultyInput != null) {
 
   // Create new project
   private void createProject() {
-    String projectName = getStringInput("Enter project name"); 
-    BigDecimal estimatedHours = getDecimalInput("Enter estimated hours"); 
-    BigDecimal actualHours = getDecimalInput("Enter actual hours"); 
+    Optional<String> projectNameOpt = getStringInput("Enter project name");
+    BigDecimal estimatedHours = getDecimalInput("Enter estimated hours");
+    BigDecimal actualHours = getDecimalInput("Enter actual hours");
     Integer difficulty = null;
-while (difficulty == null) {
-  Integer input = getIntInput("Enter difficulty (1-5)");
-  if (input != null && (input < 1 || input > 6)) {
-    System.out.println("Difficulty must be between 1 and 5. Try again.");
-  } else {
-    difficulty = input;
-  }
-} 
-    String notes = getStringInput("notes"); 
+    while (difficulty == null) {
+      Integer input = getIntInput("Enter difficulty (1-5)");
+      if (input != null && (input < 1 || input > 5)) {
+        System.out.println("Difficulty must be between 1 and 5. Try again.");
+      } else {
+        difficulty = input;
+      }
+    }
+    Optional<String> notesOpt = getStringInput("Enter notes");
 
-    Project project = new Project(); 
-    project.setProjectName(projectName);
+    if (projectNameOpt.isEmpty()) {
+      System.out.println("Project name is required.");
+      return;
+    }
+
+    Project project = new Project();
+    project.setProjectName(projectNameOpt.get());
     project.setEstimatedHours(estimatedHours);
     project.setActualHours(actualHours);
     project.setDifficulty(difficulty);
-    project.setNotes(notes);
+    project.setNotes(notesOpt.orElse(null));
 
-    Project dbProject = projectService.addProject(project); 
-    System.out.println("Created: " + dbProject); 
+    Project dbProject = projectService.addProject(project);
+    System.out.println("Created: " + dbProject);
   }
 
   // Get decimal input
   private BigDecimal getDecimalInput(String prompt) {
-    String input = getStringInput(prompt); 
-    if (Objects.isNull(input)) return null;
+    Optional<String> optInput = getStringInput(prompt);
+    if (optInput.isEmpty()) return null;
+    String input = optInput.get();
     try {
       return new BigDecimal(input).setScale(2);
     } catch (NumberFormatException e) {
-      throw new DbException(input + " invalid number"); 
+      throw new DbException(input + " invalid number");
     }
   }
 
@@ -186,24 +190,25 @@ while (difficulty == null) {
   // Get integer input
   private Integer getIntInput(String prompt) {
     while (true) {
-      String input = getStringInput(prompt); 
-      if (input == null || input.isBlank()) {
+      Optional<String> optInput = getStringInput(prompt);
+      if (optInput.isEmpty()) {
         System.out.println("Invalid input. Please try again.");
         continue;
       }
+      String input = optInput.get();
       try {
-        return Integer.valueOf(input); 
+        return Integer.valueOf(input);
       } catch (NumberFormatException e) {
-        System.out.println(input + " invalid number. Please try again."); 
+        System.out.println(input + " invalid number. Please try again.");
       }
     }
   }
 
   // Get string input
-  private String getStringInput(String prompt) {
-    System.out.print(prompt + ": "); 
-    String input = scanner.nextLine(); 
-    return input.isBlank() ? null : input.trim(); 
+  private Optional<String> getStringInput(String prompt) {
+    System.out.print(prompt + ": ");
+    String input = scanner.nextLine();
+    return input.isBlank() ? Optional.empty() : Optional.of(input.trim());
   }
 
   // Print menu options
