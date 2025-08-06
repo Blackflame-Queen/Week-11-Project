@@ -1,1 +1,1 @@
-This project builds off of the menu app made with Create and Read functionality, but lacking the Update and Delete operations. they U and D functions have now been established and therefore completes this project menu as a CRUD app.
+This project builds off of the menu app made with Create and Read functionality, but lacking the Update and Delete operations. the U and D functions have now been established and therefore completes this project menu as a CRUD app.
