@@ -215,6 +215,6 @@ public class ProjectsApp {
   private void printOperations() {
     System.out.println("Selections (Ctrl+C to Quit):"); 
     operations.forEach(line -> System.out.println("  " + line)); 
-    System.out.println(Objects.isNull(curProject) ? "No project chosen" : "Working on: " + curProject); 
+    System.out.println(Objects.isNull(curProject) ? "No project chosen" : "Project Summary: " + curProject); 
   }
 }
