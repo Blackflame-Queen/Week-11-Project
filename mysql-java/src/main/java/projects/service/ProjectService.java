@@ -5,7 +5,7 @@ import java.util.NoSuchElementException;
 import projects.dao.ProjectDao;
 import projects.entity.Project;
 
-// This file serves manage project CRUD tasks
+// This file serves to manage project CRUD tasks
 public class ProjectService {
   private ProjectDao projectDao = new ProjectDao();
 
